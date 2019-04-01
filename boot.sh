@@ -25,15 +25,20 @@ if [ -c /dev/kvm ]; then
 	KVM_ARGS='-enable-kvm'
 fi
 
-exec qemu-system-x86_64 $KVM_ARGS -m 8192 -cpu core2duo,kvm=off \
+exec qemu-system-x86_64 $KVM_ARGS -m 16G -cpu host,kvm=off \
 	  -machine pc-q35-2.4 \
-	  -smp 4,cores=2 \
+	  -smp 4,cores=6 \
 	  -usb -device usb-kbd -device usb-tablet \
 	  -device isa-applesmc,osk="ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc" \
 	  -kernel /usr/lib/qemu/enoch_rev2839_boot \
 	  -smbios type=2 \
-	  -device ide-drive,bus=ide.2,drive=MacHDD \
-	  -drive id=MacHDD,if=none,file=$SNAPSHOT_DIR/mac_hdd.img \
-      	  -netdev user,id=usr0 -device e1000-82545em,netdev=usr0,id=vnet0 \
+       	  -device virtio-scsi-pci,id=scsi0,drive=MacHDD \
+	  -drive file=$SNAPSHOT_DIR/mac_hdd.img,id=MacHDD \
+	  -device scsi-hd,drive=someid,bus=scsi0.0 \
+#	  -device ide-drive,bus=ide.2,drive=MacHDD \
+#	  -drive id=MacHDD,if=none,file=$SNAPSHOT_DIR/mac_hdd.img \
+#      	  -netdev user,id=usr0 -device e1000-82545em,netdev=usr0,id=vnet0 \
 	  -device ich9-intel-hda -device hda-duplex \
+	  -netdev user \
+       	  -device virtio-net,netdev=vmnic -netdev tap,id=vmnic,ifname=vnet0,script=no,downscript=no\
 	  -display none -redir tcp:2222::22 -vnc 0.0.0.0:0
